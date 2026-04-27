@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>StackMon | Play Now</title>
+  <link rel="shortcut icon" href="TemplateData/favicon.ico">
+  <link rel="stylesheet" href="TemplateData/style.css">
+
+  <!-- Open Graph Meta Tags (Fallback for X/Twitter and other social platforms) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://x-testing.vercel.app/">
+  <meta property="og:title" content="StackMon | Play Now">
+  <meta property="og:description" content="Play StackMon – stack, compete, and earn on X!">
+  <meta property="og:image" content="https://x-testing.vercel.app/public/stackmon_images/stackmon_twitter_card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="628">
+  <meta property="og:image:type" content="image/png">
+
+  <!-- Twitter/X Card Metadata (summary_large_image for rich link previews) -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@playstackmon">
+  <meta name="twitter:title" content="StackMon | Play Now">
+  <meta name="twitter:description" content="Play StackMon – stack, compete, and earn on X!">
+  <meta name="twitter:image" content="https://x-testing.vercel.app/public/stackmon_images/stackmon_twitter_card.png">
+  <meta name="twitter:image:alt" content="StackMon game logo with crystal pillars and mystical landscape">
+
+  <style>
+    /* Override/Add styles for the custom look */
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-image: url('TemplateData/BG.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #unity-container {
+      position: relative !important;
+      width: auto !important;
+      height: auto !important;
+      transform: none !important;
+      left: auto !important;
+      top: auto !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #unity-canvas {
+      /* Cool UI Panel Styling */
+      background: #000;
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      width: 100%;
+      height: 100%;
+    }
+
+    #unity-loading-bar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    #unity-footer {
+      display: none; /* Hiding footer for a cleaner card look, optional but requested 'cool UI' usually implies clean */
+    }
+  </style>
+</head>
+
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="unity-loading-bar">
+      <div id="unity-logo"></div>
+      <div id="unity-progress-bar-empty">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
+    <div id="unity-warning"> </div>
+  </div>
+
+  <script>
+    var canvas = document.querySelector("#unity-canvas");
+
+    function unityShowBanner(msg, type) {
+      var warningBanner = document.querySelector("#unity-warning");
+      function updateBannerVisibility() {
+        warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+      }
+      var div = document.createElement('div');
+      div.innerHTML = msg;
+      warningBanner.appendChild(div);
+      if (type == 'error') div.style = 'background: red; padding: 10px;';
+      else {
+        if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+        setTimeout(function () {
+          warningBanner.removeChild(div);
+          updateBannerVisibility();
+        }, 5000);
+      }
+      updateBannerVisibility();
+    }
+
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/X.loader.js";
+    var config = {
+      arguments: [],
+      dataUrl: buildUrl + "/X.data",
+      frameworkUrl: buildUrl + "/X.framework.js",
+      codeUrl: buildUrl + "/X.wasm",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "DefaultCompany",
+      productName: "X_Test",
+      productVersion: "1.0",
+      showBanner: unityShowBanner,
+    };
+
+    // Dynamic Resizing Function
+    function resizeGame() {
+      // Base Game Aspect Ratio (Portrait 500:900 = 5:9)
+      var gameAspectRatio = 500 / 900;
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+      
+      // Calculate available space with some margin
+      var availableHeight = windowHeight * 0.95; 
+      var availableWidth = windowWidth * 0.95;
+
+      var newWidth, newHeight;
+
+      // Try fitting by height first
+      newHeight = availableHeight;
+      newWidth = newHeight * gameAspectRatio;
+
+      // If width is too big, fit by width
+      if (newWidth > availableWidth) {
+        newWidth = availableWidth;
+        newHeight = newWidth / gameAspectRatio;
+      }
+
+      // Apply sizes
+      canvas.style.width = newWidth + "px";
+      canvas.style.height = newHeight + "px";
+    }
+
+    // Initialize resize
+    window.addEventListener('resize', resizeGame);
+    resizeGame(); // Initial call
+
+    // Mobile handling
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      var meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+    } 
+
+    document.querySelector("#unity-loading-bar").style.display = "block";
+
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+      createUnityInstance(canvas, config, (progress) => {
+        document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+      }).then((unityInstance) => {
+        document.querySelector("#unity-loading-bar").style.display = "none";
+        // removed fullscreen button logic since we are resizing dynamically and footer is hidden.
+        // If needed, we can add a custom overlay button, but for now cleanliness is priority.
+      }).catch((message) => {
+        alert(message);
+      });
+    };
+
+    document.body.appendChild(script);
+
+  </script>
+</body>
+
+</html>
